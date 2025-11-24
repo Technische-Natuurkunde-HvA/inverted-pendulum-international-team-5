@@ -2,9 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # --- Read file ---
-df = pd.read_csv("data.csv")   # make sure data.csv is in the same folder
+df = pd.read_csv("data.csv")   # make sure data.csv is in the same folder as the file of this code
 
-# --- retrieve culumnsz ---
+# --- retrieve culumns ---
 time = df["time_ms"]
 angle = df["angle_deg"]
 

@@ -1,0 +1,19 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# --- Bestand inlezen ---
+df = pd.read_csv("data.csv")   # Zorg dat data.csv in dezelfde map staat
+
+# --- Kolommen ophalen ---
+time = df["time_ms"]
+angle = df["angle_deg"]
+
+# --- Plot tekenen ---
+plt.figure(figsize=(10, 5))
+plt.plot(time, angle, linewidth=2)
+plt.xlabel("Tijd (ms)")
+plt.ylabel("Hoek (graden)")
+plt.title("Hoek tegenover tijd")
+plt.grid(True)
+plt.tight_layout()
+plt.show()

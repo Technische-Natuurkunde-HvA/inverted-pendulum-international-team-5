@@ -29,7 +29,7 @@ void setup() {
   Serial.println("SD-kaart gevonden.");
 
   // CSV-bestand openen of aanmaken
-  dataFile = SD.open("data.csv", FILE_WRITE);
+  dataFile = SD.open("data.csv", FILE_WRITE);         #file name (when changed also change the name in the plotting code)
 
   if (dataFile) {
     // CSV-header schrijven

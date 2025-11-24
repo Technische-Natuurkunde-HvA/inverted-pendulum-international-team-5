@@ -10,7 +10,7 @@ unsigned long lastMs;
 const unsigned int FREE_RUN_PERIOD_MS = 100;
 float sig_angle_deg;
 
-const int chipSelect = 4;   // Pas aan als je een andere CS-pin gebruikt
+const int chipSelect = 4;   // change if you use a different CS-pin
 
 File dataFile;
 
@@ -23,20 +23,20 @@ void setup() {
   Serial.println("Initialising SD-card...");
 
   if (!SD.begin(chipSelect)) {
-    Serial.println("SD-kaart niet gevonden!");
+    Serial.println("SD-card not found!");
     while (1);
   }
-  Serial.println("SD-kaart gevonden.");
+  Serial.println("SD-card found.");
 
-  // CSV-bestand openen of aanmaken
+  // opening or creating CSV-file 
   dataFile = SD.open("data.csv", FILE_WRITE);         #file name (when changed also change the name in the plotting code)
 
   if (dataFile) {
-    // CSV-header schrijven
+    // writing CSV-header 
     dataFile.println("time_ms,angle_deg");
     dataFile.close();
   } else {
-    Serial.println("Kon data.csv niet openen!");
+    Serial.println("could not open data.csv!");
   }
 
   delay(2000);
@@ -50,7 +50,7 @@ void loop() {
 
     sig_angle_deg = as5600.readAngle() * 0.0879;
 
-    // Open bestand opnieuw in append-mode
+    // opening file again in append-mode
     dataFile = SD.open("data.csv", FILE_WRITE);
 
     if (dataFile) {
@@ -65,7 +65,7 @@ void loop() {
       Serial.println(sig_angle_deg);
     } 
     else {
-      Serial.println("Fout: kon data.csv niet schrijven");
+      Serial.println("Error: could not write CSV-file");
     }
   }
 }

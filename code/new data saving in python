@@ -1,0 +1,49 @@
+import serial
+import csv
+import threading
+import time
+
+SERIAL_PORT = 'COM3'
+BAUD_RATE = 9600
+CSV_FILE = 'hoek_metingen.csv'
+
+stop_flag = False
+
+# Thread om op Enter te drukken om te stoppen
+def wait_for_stop():
+    global stop_flag
+    input("Druk Enter om het uitlezen te stoppen...\n")
+    stop_flag = True
+
+threading.Thread(target=wait_for_stop, daemon=True).start()
+
+# Open seriële poort
+try:
+    ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+    time.sleep(2)
+except serial.SerialException as e:
+    print(f"Kan seriële poort niet openen: {e}")
+    exit(1)
+
+# Open CSV-bestand
+with open(CSV_FILE, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(['Hoek', 'Tijd'])
+
+    start_time = time.time()
+    print("Uitlezen gestart. Druk Enter om te stoppen.")
+
+    while not stop_flag:
+        line = ser.readline().decode('utf-8').strip()
+        if line:
+            try:
+                hoek = float(line)  # alleen hoek
+                tijd = time.time() - start_time  # tijd in seconden sinds start
+                writer.writerow([hoek, tijd])
+                print(f"Hoek: {hoek}, Tijd: {tijd:.2f}s")
+            except ValueError:
+                print(f"Foutieve regel: {line}")
+
+ser.close()
+print("Uitlezen gestopt. Data opgeslagen in:", CSV_FILE)
+

@@ -1,0 +1,8 @@
+- Good you uploaded a progress update. Next time, please write it in the markdown file called ‘weekly-progress’. Let us know if you need any help with using GitHub.
+- Excellent you wrote a code to automize your measurements.
+    - The motor needs time to accelerate to a new constant RPM after the output increases. How will you take this delay into account?
+    - How will you measure the response in both directions?
+    - You have included the reduction ratio in your code correctly.
+    - Where in the frequency/RPM calculation do you take the measurement duration (5000 ms) into account?
+    - Please write all comments in English! As an international team, you should collaborate on the same code.
+- Nice you have included a graph. It shows the angle over time, right? Please write a python script to download the data and plot it with information on the axes.

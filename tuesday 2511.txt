@@ -1,0 +1,36 @@
+tuesday 25/11
+
+# AS5600 Sensor Issue Report
+
+## Summary
+
+During integration of the AS5600 magnetic encoder, all initial sensors returned constant values of **0.0°**, indicating no valid I2C communication. After systematic testing, the issue was traced not to the sensors themselves, but to soldering damage on the breakout boards.
+
+## Steps Performed
+
+* Tested **three different AS5600 sensors** → all returned 0.0°.
+* Replaced all wiring → no improvement.
+* Swapped to a different Arduino → still no readings.
+* At the beginning of the session, tested a **new AS5600 without soldering** (wires inserted directly) → **sensor worked immediately**.
+
+## Root Cause (Most Likely)
+
+The previous AS5600 boards were **damaged during soldering**. Possible effects:
+
+* overheating of PCB pads or traces,
+* accidental short on SDA/SCL,
+* broken pad or lifted trace,
+* partial or cold solder joints.
+
+## Conclusion
+
+The AS5600 works correctly when not soldered. The repeated failures with soldered modules strongly indicate that soldering operations compromised the sensors.
+
+## Recommendations
+
+* Avoid soldering until tests are fully validated.
+* Use pre‑soldered header pins or low‑temperature solder.
+* Check continuity (SDA, SCL, VCC, GND) with a multimeter before powering.
+* Handle PCB pads carefully to avoid mechanical damage.
+
+*End of concise report.*

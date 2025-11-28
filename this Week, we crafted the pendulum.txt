@@ -1,5 +1,0 @@
-this Week, we crafted the pendulum and make sure that everything runs correctly.
-
-then we modified the code to ( Hz -> RPM) to see if the motor was rootating at its nominal value +-10% ( also tolérance on the sensor) 
-
-finally, we modified the Arduino code to increment the pwm signal and printing the value of the speed in the csv format. it is possible t make a graph in the Arduino software (visual plotter) 

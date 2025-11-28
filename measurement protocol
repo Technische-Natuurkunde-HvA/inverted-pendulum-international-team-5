@@ -1,3 +1,0 @@
-we will measure at around 80 PWM. we will vary each PWM value with 5 PWM.
-we will measure every value for 30 seconds and repeat this 3 times for each value.
-we will use Visual Studio Code an jupyter Notebook for collecting and processing the data.

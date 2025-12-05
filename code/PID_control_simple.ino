@@ -21,9 +21,9 @@ double setpoint = 349; // Desired angle (vertical position)
 double output = 0;
 
 // PID parameters
-double Kp = 40;
-double Ki = 5;
-double Kd = 0.001;
+double Kp = 40;        //45
+double Ki = 5;         //0.3
+double Kd = 0.001;     //0.001
 PID myPID(&sig_angle_deg, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
 void readAndPrintAngle();

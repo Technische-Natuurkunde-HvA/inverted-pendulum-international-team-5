@@ -1,0 +1,7 @@
+- Good that you uploaded a progress update in a markdown file. However, it does not include any code or graphs.
+- Great you managed to stabilize the pendulum for a limited time. Your analysis of the issues you encountered is very clear.
+- Nice you uploaded an output-response curve. Try to merge it into one graph for both motors.
+- Your PID control sketch does not seem to include a correction formula for the motor’s dead zone.
+- There are no videos in your repository yet. Please add some this week.
+- When tuning the parameters make sure you have a systematic approach. Decide on which parameters to change, observe the results and based on the results, decide which parameter to change next and by how much.
+- Make sure that you report on the process and intermediate results. Explain how you made decisions and why, instead of just mentioning the final numbers.

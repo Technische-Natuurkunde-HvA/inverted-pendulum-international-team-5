@@ -384,7 +384,8 @@ After solving these problems, we were able to create some graphs concerning the 
 * Speed = 620 RPM
 * Voltage = 12V
 
-![PWM,RPM = f(time)]("Visuals/Measured PWM and RPM against time.png")
+![PWM,RPM = f(time)](https://raw.githubusercontent.com/Technische-Natuurkunde-HvA/inverted-pendulum-international-team-5/main/Visuals/%28PWM%20%3B%20RPM%29%20%3D%20fct%28time%29.png) 
+
 
 
 

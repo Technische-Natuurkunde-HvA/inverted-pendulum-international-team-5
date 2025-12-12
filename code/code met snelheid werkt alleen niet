@@ -1,0 +1,142 @@
+#include <Wire.h>
+#include <PID_v1.h>
+#include <AS5600.h>
+
+AS5600 as5600;
+
+// Timers
+unsigned long currentMs;
+unsigned long lastMs;
+const unsigned int FREE_RUN_PERIOD_MS = 12; // iets langer voor stabiliteit
+
+// Hoek en snelheid
+double sig_angle_deg;
+double prev_angle_deg = 0;
+double angular_velocity = 0;
+double prev_angular_velocity = 0; // voor low-pass filter
+
+// Motor control pins
+const int motorPin1 = 10; // IN1
+const int motorPin2 = 11; // IN2
+const int enablePin = 9;  // PWM ENA
+
+// Setpoint (balanspunt)
+double setpoint = 87.11;
+
+// Outer loop PID parameters (hoek)
+double Kp_angle = 24.0;  // lager om tegenwerking inner loop te voorkomen
+double Ki_angle = 0.2;
+double Kd_angle = 0.5;
+
+// Inner loop PD parameters (snelheid)
+double Kp_speed = 0.00001;  // rustiger voor stabiele motor
+double Kd_speed = 0.028;
+
+// Deadzone motor
+const int deadzone = -2000;
+
+// Low-pass filter factor voor snelheid
+const double alpha = 0.85;
+
+// Midden-deadzone rond setpoint
+const double angle_deadband = 3.0;
+
+// PID object voor outer loop (hoek)
+double outerOutput = 0;
+PID anglePID(&sig_angle_deg, &outerOutput, &setpoint, Kp_angle, Ki_angle, Kd_angle, DIRECT);
+
+void readAngleAndSpeed();
+
+void setup() {
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
+  pinMode(enablePin, OUTPUT);
+
+  Wire.begin();
+  as5600.begin();
+
+  lastMs = millis();
+  Serial.begin(9600);
+  delay(2000);
+
+  Serial.println("Optimized Cascade Control Started");
+
+  // Outer loop PID instellen
+  anglePID.SetMode(AUTOMATIC);
+  anglePID.SetSampleTime(FREE_RUN_PERIOD_MS);
+  anglePID.SetOutputLimits(-255, 255);
+}
+
+void loop() {
+  currentMs = millis();
+  if (currentMs - lastMs >= FREE_RUN_PERIOD_MS) {
+    // Lees hoek + snelheid
+    readAngleAndSpeed();
+
+    // --- Outer loop: PID op hoek ---
+    anglePID.Compute();
+    double desired_speed = outerOutput; // outer loop genereert snelheidssetpoint
+
+    // --- Inner loop: PD op snelheid ---
+    double dt = FREE_RUN_PERIOD_MS / 1000.0;
+    double speed_error = desired_speed - angular_velocity;
+    double control_signal = Kp_speed * speed_error + Kd_speed * (speed_error / dt);
+
+    // --- Midden-deadzone: motor stopt ±2° van setpoint ---
+    double angle_error = setpoint - sig_angle_deg;
+    if (abs(angle_error) < angle_deadband) {
+        control_signal = 0;
+    }
+
+    // --- PWM en motor output ---
+    int pwm = abs(control_signal);
+    if (pwm > 0 && pwm < deadzone) pwm = deadzone;
+    if (pwm > 255) pwm = 255;
+
+    if (control_signal > 0) {
+      digitalWrite(motorPin1, HIGH);
+      digitalWrite(motorPin2, LOW);
+    } else {
+      digitalWrite(motorPin1, LOW);
+      digitalWrite(motorPin2, HIGH);
+    }
+
+    analogWrite(enablePin, pwm);
+
+    // Debug
+    Serial.print("Angle: ");
+    Serial.print(sig_angle_deg);
+    Serial.print("  OuterPID: ");
+    Serial.print(outerOutput);
+    Serial.print("  Speed: ");
+    Serial.print(angular_velocity);
+    Serial.print("  Control: ");
+    Serial.println(control_signal);
+  }
+}
+
+void readAngleAndSpeed() {
+  lastMs = currentMs;
+
+  // Lees hoek van AS5600
+  double new_angle = (double)as5600.readAngle() * 0.0879; // 360/4096
+
+  // dt in seconden
+  double dt = FREE_RUN_PERIOD_MS / 1000.0;
+
+  // Hoekverschil met wrap-around correctie
+  double diff = new_angle - prev_angle_deg;
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+
+  // Snelheid (°/s)
+  double raw_speed = diff / dt;
+
+  // Low-pass filter om kleine ruis te dempen
+  angular_velocity = alpha * raw_speed + (1 - alpha) * prev_angular_velocity;
+  prev_angular_velocity = angular_velocity;
+
+  // Update vorige hoek
+  prev_angle_deg = new_angle;
+  sig_angle_deg = new_angle;
+}

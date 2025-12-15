@@ -94,6 +94,10 @@ This includes:
 ├── docs/
 │   └── weekly_progress.md
 └── data/
+
+```
+---
+
 ## Limitations and Future Work
 
 Current limitations include:

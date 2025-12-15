@@ -94,3 +94,20 @@ This includes:
 ├── docs/
 │   └── weekly_progress.md
 └── data/
+## Limitations and Future Work
+
+Current limitations include:
+
+- Structural conflict between angle and speed control loops.
+
+- Reaction wheel speed saturation due to motor torque–speed limits.
+
+- Lack of formal anti-windup and state constraints.
+
+Planned improvements:
+
+- Hierarchical or state-based control architecture.
+
+- Explicit speed saturation handling.
+
+- Energy-based swing-up control.

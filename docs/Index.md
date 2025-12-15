@@ -69,32 +69,206 @@ This step-by-step tuning ensures a justified and reproducible methodology.
 
 ---
 
-## 4. Core Embedded Code (Essential Extract)
-
+- **Essential control logic**
+  
 ```cpp
+// --- Libraries ---
 #include <Wire.h>
 #include <PID_v1.h>
 #include <AS5600.h>
 
+// --- Sensors & Motor Hardware ---
 AS5600 as5600;
 const int motorPin1 = 10, motorPin2 = 11, enablePin = 9;
 const int encoderPin = 2;
 
+// --- Timing (angle loop + speed loop) ---
 const unsigned int LOOP_PERIOD_MS  = 5;
 const unsigned int SPEED_PERIOD_MS = 20;
 unsigned long lastLoopMs, lastSpeedMs;
 
-double angleDeg = 0.0, angleSet = 0.0, angleIn = 0.0;
+// --- Angle Measurement ---
+double angleDeg = 0.0;
+double angleSet = 0.0;     // target angle
+double angleIn  = 0.0;     // measured angle
+
+// --- Angle PID (main controller → PWM) ---
 double pwmAngle = 0.0;
 double aKp = 50, aKi = 3, aKd = 0.01;
 PID anglePID(&angleIn, &pwmAngle, &angleSet, aKp, aKi, aKd, DIRECT);
 
+// --- Speed Measurement ---
 volatile long pulseCount = 0;
-const double pulsesPerRev = 11 * 9.6;
+const double pulsesPerRev = 11 * 9.6;   // motor encoder × gearbox
 
-double speedIn = 0.0, speedSet = 0.0, pwmSpeed = 0.0;
+// --- Speed PID (small damping contribution) ---
+double speedIn = 0.0;
+double speedSet = 0.0;     // want RPM ≈ 0
+double pwmSpeed = 0.0;
 double sKp = 2, sKi = 0.1, sKd = 1;
 PID speedPID(&speedIn, &pwmSpeed, &speedSet, sKp, sKi, sKd, DIRECT);
 
+// --- Weight of speed correction ---
 const double SPEED_WEIGHT = 0.20;
 
+// =========================================================================
+//                                SETUP
+// =========================================================================
+void setup() {
+    Wire.begin();
+    as5600.begin();
+    pinMode(motorPin1, OUTPUT);
+    pinMode(motorPin2, OUTPUT);
+    pinMode(enablePin, OUTPUT);
+    pinMode(encoderPin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(encoderPin), []{ pulseCount++; }, RISING);
+
+    // Initial angle defines setpoint (vertical = +30°)
+    angleDeg = as5600.readAngle() * 0.0879;
+    angleSet = angleDeg + 30;
+
+    anglePID.SetMode(AUTOMATIC);
+    anglePID.SetOutputLimits(-255, 255);
+
+    speedPID.SetMode(AUTOMATIC);
+    speedPID.SetOutputLimits(-60, 60);
+
+    lastLoopMs  = millis();
+    lastSpeedMs = millis();
+}
+
+// =========================================================================
+//                                MAIN LOOP
+// =========================================================================
+void loop() {
+    unsigned long now = millis();
+
+    // --- Speed PID every SPEED_PERIOD_MS ---
+    if (now - lastSpeedMs >= SPEED_PERIOD_MS) {
+        lastSpeedMs = now;
+
+        noInterrupts();
+        long count = pulseCount;
+        pulseCount = 0;
+        interrupts();
+
+        double rpm = (count * 60.0 / pulsesPerRev) / (SPEED_PERIOD_MS / 1000.0);
+        speedIn = rpm;
+
+        speedPID.Compute();
+    }
+
+    // --- Angle PID every LOOP_PERIOD_MS ---
+    if (now - lastLoopMs >= LOOP_PERIOD_MS) {
+        lastLoopMs = now;
+
+        angleDeg = as5600.readAngle() * 0.0879;
+        angleIn  = angleDeg;
+
+        anglePID.Compute();                    // main control
+        double pwm = pwmAngle + SPEED_WEIGHT * pwmSpeed;
+
+        driveMotor((int)pwm);
+    }
+}
+
+// =========================================================================
+//                             MOTOR DRIVE
+// =========================================================================
+void driveMotor(int pwm) {
+    if (pwm > 0) {
+        digitalWrite(motorPin1, LOW);
+        digitalWrite(motorPin2, HIGH);
+        analogWrite(enablePin, min(pwm, 255));
+    } else {
+        digitalWrite(motorPin1, HIGH);
+        digitalWrite(motorPin2, LOW);
+        analogWrite(enablePin, min(-pwm, 255));
+    }
+}
+
+
+```
+---
+
+## Experimental Results
+
+### Motor Characterization
+A PWM sweep revealed:
+
+- Dead zone due to static friction
+
+- Linear mid-range RPM–PWM behavior
+
+- Saturation near nominal speed
+
+Plots available in Visuals/:
+
+- PWM_RPM_vs_time.png
+
+- RPM_vs_PWM.png
+
+Stabilization Tests
+
+- Initial stabilization achieved with the angle PID
+
+- Adding the speed PID improved long-term equilibrium
+
+- Drift and saturation significantly reduced
+---
+
+## Weekly Progress
+
+A detailed week-by-week development log is provided in a separate document:
+
+➡️ **[`docs/weekly_progress.md`](docs/weekly_progress.md)**
+
+This includes:
+- hardware assembly,
+- sensor debugging,
+- motor characterization,
+- initial PID stabilization,
+- introduction of a second PID loop,
+- observed limitations and experimental insights.
+
+---
+
+## Repository Structure
+
+```text
+.
+├── README.md
+├── src/
+│   ├── arduino/
+│   └── python/
+├── Visuals/
+│   ├── PWM_RPM_vs_time.png
+│   └── RPM_vs_PWM.png
+├── docs/
+│   └── weekly_progress.md
+└── data/
+
+```
+---
+
+## Limitations and Future Work
+
+Current limitations include:
+
+- Structural conflict between angle and speed control loops.
+
+- Reaction wheel speed saturation due to motor torque–speed limits.
+
+- Lack of formal anti-windup and state constraints.
+
+Planned improvements:
+
+- Hierarchical or state-based control architecture.
+
+- Explicit speed saturation handling.
+
+- Energy-based swing-up control.
+
+## Conclusion 
+This project demonstrates the full workflow of implementing and experimentally validating a reaction-wheel inverted pendulum.
+The system successfully achieves stabilization, and the framework is ready for more advanced nonlinear control strategies.
